@@ -1,906 +1,1115 @@
 {
-  "AWSTemplateFormatVersion": "2010-09-09",
+    "AWSTemplateFormatVersion": "2010-09-09",
 
-  "Parameters" : {
+    "Parameters": {
 
-    "ClientName" : {
-      "Description" : "Name of the client",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "64",
-      "AllowedPattern" : "^*[a-zA-Z][a-zA-Z]*$",
-      "ConstraintDescription" : "can contain only alphanumeric characters, spaces, dashes and underscores."
-    },
-    "KeyName" : {
-      "Description" : "Name of an existing EC2 KeyPair to enable SSH access to the instances",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "64",
-      "AllowedPattern" : "[-_ a-zA-Z0-9]*",
-      "ConstraintDescription" : "can contain only alphanumeric characters, spaces, dashes and underscores."
-   },
-   "RegionName" : {
-      "Description" : "Name of the EC2 region you are deploying to.",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "64",
-      "Default" : "us-east-1", 
-      "AllowedValues" : ["us-east-1", "us-west-2", "us-west-1", "eu-west-1", "ap-southeast-1", "ap-southeast-2", "ap-northeast-1", "sa-east-1"],
-      "ConstraintDescription" : "must comtain of the following regions: us-east-1, us-west-2, us-west-1, eu-west-1, ap-southeast-1, ap-southeast-2, ap-northeast-1, sa-east-1."
-   },
-   "VPCCIDR" : {
-      "Description" : "What is the CIDR block of the VPC?",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "64",
-      "Default" : "10.32.0.0/16", 
-      "AllowedPattern" : "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|1[0-9]))$",
-      "ConstraintDescription" : "Must be in CIDR format"
-   },
-   "Public1" : {
-      "Description" : "What is the CIDR block of the Public1 network?",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "64",
-      "Default" : "10.32.40.0/24", 
-      "AllowedPattern" : "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|2[0-9]))$",
-      "ConstraintDescription" : "Must be in CIDR format"
-   },
-   "Public2" : {
-      "Description" : "What is the CIDR block of the Public2 network?",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "64",
-      "Default" : "10.32.41.0/24", 
-      "AllowedPattern" : "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|2[0-9]))$",
-      "ConstraintDescription" : "Must be in CIDR format"
-   },
-   "Private1" : {
-      "Description" : "What is the CIDR block of the Private1 network?",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "64",
-      "Default" : "10.32.42.0/24", 
-      "AllowedPattern" : "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|2[0-9]))$",
-      "ConstraintDescription" : "Must be in CIDR format"
-   },
-   "Private2" : {
-      "Description" : "What is the CIDR block of the Private2 network?",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "64",
-      "Default" : "10.32.43.0/24", 
-      "AllowedPattern" : "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|2[0-9]))$",
-      "ConstraintDescription" : "Must be in CIDR format"
-   },
-   "MGMT" : {
-      "Description" : "What is the CIDR block of the management network?",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "64",
-      "Default" : "10.32.44.0/24", 
-      "AllowedPattern" : "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|2[0-9]))$",
-      "ConstraintDescription" : "Must be in CIDR format"
-   },
-   "AZ1" : {
-      "Description" : "Name of the first availability zone you are deploying to (i.e. us-east-1b):",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "64",
-      "Default" : "us-east-1d", 
-      "AllowedValues" : ["us-east-1b", "us-east-1c", "us-east-1d", "us-west-2a", "us-west-2b", "us-west-2c", "us-west-1a", "us-west-1b", "eu-west-1a", "eu-west-1b", "eu-west-1c", "ap-southeast-1a", "ap-southeast-1b", "ap-northeast-1a", "ap-northeast-1b", "ap-northeast-1c", "ap-southeast-1a", "ap-southeast-1b", "sa-east-1a", "sa-east-1b"],
-      "ConstraintDescription" : "must comtain of the following regions: us-east-1b, us-east-1c, us-east-1d, us-west-2a, us-west-2b, us-west-2c, us-west-1a, us-west-1b, eu-west-1a, eu-west-1b, eu-west-1c, ap-southeast-1a, ap-southeast-1b, ap-northeast-1a, ap-northeast-1b, ap-northeast-1c, ap-southeast-1a, ap-southeast-1b, sa-east-1a, sa-east-1b."
-   },
-   "AZ2" : {
-      "Description" : "Name of the second availability zone you are deploying to (i.e. us-east-1c):",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "64",
-      "Default" : "us-east-1c", 
-      "AllowedValues" : ["us-east-1b", "us-east-1c", "us-east-1d", "us-west-2a", "us-west-2b", "us-west-2c", "us-west-1a", "us-west-1b", "eu-west-1a", "eu-west-1b", "eu-west-1c", "ap-southeast-1a", "ap-southeast-1b", "ap-northeast-1a", "ap-northeast-1b", "ap-northeast-1c", "ap-southeast-1a", "ap-southeast-1b", "sa-east-1a", "sa-east-1b"],
-      "ConstraintDescription" : "must comtain of the following regions: us-east-1b, us-east-1c, us-east-1d, us-west-2a, us-west-2b, us-west-2c, us-west-1a, us-west-1b, eu-west-1a, eu-west-1b, eu-west-1c, ap-southeast-1a, ap-southeast-1b, ap-northeast-1a, ap-northeast-1b, ap-northeast-1c, ap-southeast-1a, ap-southeast-1b, sa-east-1a, sa-east-1b."
-   },
-   "AZ3" : {
-      "Description" : "Name of the third availability zone you are deploying to (i.e. us-east-1d):",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "64",
-      "Default" : "us-east-1b", 
-      "AllowedValues" : ["us-east-1b", "us-east-1c", "us-east-1a", "us-east-1d", "us-west-2a", "us-west-2b", "us-west-2c", "us-west-1a", "us-west-1b", "eu-west-1a", "eu-west-1b", "eu-west-1c", "ap-southeast-1a", "ap-southeast-1b", "ap-northeast-1a", "ap-northeast-1b", "ap-northeast-1c", "ap-southeast-1a", "ap-southeast-1b", "sa-east-1a", "sa-east-1b"],
-      "ConstraintDescription" : "must comtain of the following regions: us-east-1b, us-east-1c, us-east-1d, us-west-2a, us-west-2b, us-west-2c, us-west-1a, us-west-1b, eu-west-1a, eu-west-1b, eu-west-1c, ap-southeast-1a, ap-southeast-1b, ap-northeast-1a, ap-northeast-1b, ap-northeast-1c, ap-southeast-1a, ap-southeast-1b, sa-east-1a, sa-east-1b."
-   },
-   "BucketName" : {
-      "Description" : "Name of the S3 bucket containing clinet configuration data",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "64"
-   },
-   "SSHPrivateKey" : {
-      "Description" : "Paste in the unencrypted private key for the client",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "10000000"
-   },
-   "PuppetIP" : {
-      "Description" : "Static IP address of Puppet server (must be in management subnet):",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "64",
-      "Default" : "10.32.44.100", 
-      "AllowedPattern" : "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])",
-      "ConstraintDescription" : "Must contain a valid IP address"
-   },
-   "PuppetHostName" : {
-      "Description" : "Static IP address of Puppet server (must be in management subnet):",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "64",
-      "Default" : "puppet.host.REPLACEME.com"
-   },
-   "NatGWHostName" : {
-      "Description" : "Hostname of the NatGW for tagging",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "64",
-      "Default" : "CHANGEME-natgw1v"
-   },
-   "PublicKey" : {
-      "Description" : "Your public ssh key to be added to authorized_keys",
-      "Type" : "String",
-      "MinLength": "1",
-      "MaxLength": "64"
-   }
-   },
-
-  "Mappings" : {
-    "AWSNATAMI" : {
-      "us-east-1"      : { "AMI" : "ami-ad227cc4" },
-      "us-west-2"      : { "AMI" : "ami-f032acc0" },
-      "us-west-1"      : { "AMI" : "ami-d69aad93" },
-      "eu-west-1"      : { "AMI" : "ami-f3e30084" },
-      "ap-southeast-1" : { "AMI" : "ami-f22772a0" },
-      "ap-southeast-2" : { "AMI" : "ami-3bae3201" },
-      "ap-northeast-1" : { "AMI" : "ami-cd43d9cc" },
-      "sa-east-1"      : { "AMI" : "ami-d78325ca" }
+        "ClientName": {
+            "Description": "Name of the client",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "AllowedPattern": "^*[a-zA-Z][a-zA-Z]*$",
+            "ConstraintDescription": "can contain only alphanumeric characters, spaces, dashes and underscores."
+        },
+        "KeyName": {
+            "Description": "Name of an existing EC2 KeyPair to enable SSH access to the instances",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "AllowedPattern": "[-_ a-zA-Z0-9]*",
+            "ConstraintDescription": "can contain only alphanumeric characters, spaces, dashes and underscores."
+        },
+        "RegionName": {
+            "Description": "Name of the EC2 region you are deploying to.",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "Default": "us-east-1",
+            "AllowedValues": ["us-east-1", "us-west-2", "us-west-1", "eu-west-1", "ap-southeast-1", "ap-southeast-2", "ap-northeast-1", "sa-east-1"],
+            "ConstraintDescription": "must comtain of the following regions: us-east-1, us-west-2, us-west-1, eu-west-1, ap-southeast-1, ap-southeast-2, ap-northeast-1, sa-east-1."
+        },
+        "VPCCIDR": {
+            "Description": "What is the CIDR block of the VPC?",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "Default": "10.32.0.0/16",
+            "AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|1[0-9]))$",
+            "ConstraintDescription": "Must be in CIDR format"
+        },
+        "Public1": {
+            "Description": "What is the CIDR block of the Public1 network?",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "Default": "10.32.40.0/24",
+            "AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|2[0-9]))$",
+            "ConstraintDescription": "Must be in CIDR format"
+        },
+        "Public2": {
+            "Description": "What is the CIDR block of the Public2 network?",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "Default": "10.32.41.0/24",
+            "AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|2[0-9]))$",
+            "ConstraintDescription": "Must be in CIDR format"
+        },
+        "Private1": {
+            "Description": "What is the CIDR block of the Private1 network?",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "Default": "10.32.42.0/24",
+            "AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|2[0-9]))$",
+            "ConstraintDescription": "Must be in CIDR format"
+        },
+        "Private2": {
+            "Description": "What is the CIDR block of the Private2 network?",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "Default": "10.32.43.0/24",
+            "AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|2[0-9]))$",
+            "ConstraintDescription": "Must be in CIDR format"
+        },
+        "MGMT": {
+            "Description": "What is the CIDR block of the management network?",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "Default": "10.32.44.0/24",
+            "AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|2[0-9]))$",
+            "ConstraintDescription": "Must be in CIDR format"
+        },
+        "AZ1": {
+            "Description": "Name of the first availability zone you are deploying to (i.e. us-east-1b):",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "Default": "us-east-1d",
+            "AllowedValues": ["us-east-1b", "us-east-1c", "us-east-1d", "us-west-2a", "us-west-2b", "us-west-2c", "us-west-1a", "us-west-1b", "eu-west-1a", "eu-west-1b", "eu-west-1c", "ap-southeast-1a", "ap-southeast-1b", "ap-northeast-1a", "ap-northeast-1b", "ap-northeast-1c", "ap-southeast-1a", "ap-southeast-1b", "sa-east-1a", "sa-east-1b"],
+            "ConstraintDescription": "must comtain of the following regions: us-east-1b, us-east-1c, us-east-1d, us-west-2a, us-west-2b, us-west-2c, us-west-1a, us-west-1b, eu-west-1a, eu-west-1b, eu-west-1c, ap-southeast-1a, ap-southeast-1b, ap-northeast-1a, ap-northeast-1b, ap-northeast-1c, ap-southeast-1a, ap-southeast-1b, sa-east-1a, sa-east-1b."
+        },
+        "AZ2": {
+            "Description": "Name of the second availability zone you are deploying to (i.e. us-east-1c):",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "Default": "us-east-1c",
+            "AllowedValues": ["us-east-1b", "us-east-1c", "us-east-1d", "us-west-2a", "us-west-2b", "us-west-2c", "us-west-1a", "us-west-1b", "eu-west-1a", "eu-west-1b", "eu-west-1c", "ap-southeast-1a", "ap-southeast-1b", "ap-northeast-1a", "ap-northeast-1b", "ap-northeast-1c", "ap-southeast-1a", "ap-southeast-1b", "sa-east-1a", "sa-east-1b"],
+            "ConstraintDescription": "must comtain of the following regions: us-east-1b, us-east-1c, us-east-1d, us-west-2a, us-west-2b, us-west-2c, us-west-1a, us-west-1b, eu-west-1a, eu-west-1b, eu-west-1c, ap-southeast-1a, ap-southeast-1b, ap-northeast-1a, ap-northeast-1b, ap-northeast-1c, ap-southeast-1a, ap-southeast-1b, sa-east-1a, sa-east-1b."
+        },
+        "AZ3": {
+            "Description": "Name of the third availability zone you are deploying to (i.e. us-east-1d):",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "Default": "us-east-1b",
+            "AllowedValues": ["us-east-1b", "us-east-1c", "us-east-1a", "us-east-1d", "us-west-2a", "us-west-2b", "us-west-2c", "us-west-1a", "us-west-1b", "eu-west-1a", "eu-west-1b", "eu-west-1c", "ap-southeast-1a", "ap-southeast-1b", "ap-northeast-1a", "ap-northeast-1b", "ap-northeast-1c", "ap-southeast-1a", "ap-southeast-1b", "sa-east-1a", "sa-east-1b"],
+            "ConstraintDescription": "must comtain of the following regions: us-east-1b, us-east-1c, us-east-1d, us-west-2a, us-west-2b, us-west-2c, us-west-1a, us-west-1b, eu-west-1a, eu-west-1b, eu-west-1c, ap-southeast-1a, ap-southeast-1b, ap-northeast-1a, ap-northeast-1b, ap-northeast-1c, ap-southeast-1a, ap-southeast-1b, sa-east-1a, sa-east-1b."
+        },
+        "BucketName": {
+            "Description": "Name of the S3 bucket containing clinet configuration data",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64"
+        },
+        "SSHPrivateKey": {
+            "Description": "Paste in the unencrypted private key for the client",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "10000000"
+        },
+        "PuppetIP": {
+            "Description": "Static IP address of Puppet server (must be in management subnet):",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "Default": "10.32.44.100",
+            "AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])",
+            "ConstraintDescription": "Must contain a valid IP address"
+        },
+        "PuppetHostName": {
+            "Description": "Static IP address of Puppet server (must be in management subnet):",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "Default": "puppet.host.REPLACEME.com"
+        },
+        "NatGWHostName": {
+            "Description": "Hostname of the NatGW for tagging",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64",
+            "Default": "CHANGEME-natgw1v"
+        },
+        "PublicKey": {
+            "Description": "Your public ssh key to be added to authorized_keys",
+            "Type": "String",
+            "MinLength": "1",
+            "MaxLength": "64"
+        }
     },
 
-    "AWSPuppetAMI" : {
-      "us-east-1"      : { "AMI" : "ami-bba18dd2" },
-      "us-west-2"      : { "AMI" : "ami-ccf297fc" },
-      "us-west-1"      : { "AMI" : "ami-a43909e1" },
-      "eu-west-1"      : { "AMI" : "ami-5256b825" },
-      "ap-southeast-2" : { "AMI" : "ami-bd990e87" },
-      "ap-southeast-1" : { "AMI" : "ami-0d13700c" },
-      "ap-northeast-1" : { "AMI" : "ami-5ba83761" },
-      "sa-east-1"      : { "AMI" : "ami-c99130d4" }
-    },
-    
-    "AWSInstanceType2Arch" : {
-      "t1.micro"    : { "Arch" : "64" },
-      "m1.small"    : { "Arch" : "64" },
-      "m1.medium"   : { "Arch" : "64" },
-      "m1.large"    : { "Arch" : "64" },
-      "m1.xlarge"   : { "Arch" : "64" },
-      "m2.xlarge"   : { "Arch" : "64" },
-      "m2.2xlarge"  : { "Arch" : "64" },
-      "m2.4xlarge"  : { "Arch" : "64" },
-      "m3.xlarge"   : { "Arch" : "64" },
-      "m3.2xlarge"  : { "Arch" : "64" },
-      "c1.medium"   : { "Arch" : "64" },
-      "c1.xlarge"   : { "Arch" : "64" },
-      "cc1.4xlarge" : { "Arch" : "64HVM" },
-      "cc2.8xlarge" : { "Arch" : "64HVM" },
-      "cg1.4xlarge" : { "Arch" : "64HVM" }
-    },
-
-    "AWSRegionArch2AMI" : {
-      "us-east-1"      : { "32" : "ami-31814f58", "64" : "ami-1b814f72", "64HVM" : "ami-0da96764"},
-      "us-west-2"      : { "32" : "ami-38fe7308", "64" : "ami-30fe7300", "64HVM" : "NOT_YET_SUPPORTED"},
-      "us-west-1"      : { "32" : "ami-11d68a54", "64" : "ami-1bd68a5e", "64HVM" : "NOT_YET_SUPPORTED" },
-      "eu-west-1"      : { "32" : "ami-973b06e3", "64" : "ami-953b06e1", "64HVM" : "NOT_YET_SUPPORTED" },
-      "ap-southeast-1" : { "32" : "ami-b4b0cae6", "64" : "ami-beb0caec", "64HVM" : "NOT_YET_SUPPORTED" },
-      "ap-southeast-2" : { "32" : "ami-b3990e89", "64" : "ami-bd990e87", "64HVM" : "NOT_YET_SUPPORTED" },
-      "ap-northeast-1" : { "32" : "ami-0644f007", "64" : "ami-0a44f00b", "64HVM" : "NOT_YET_SUPPORTED" },
-      "sa-east-1"      : { "32" : "ami-3e3be423", "64" : "ami-3c3be421", "64HVM" : "NOT_YET_SUPPORTED" }
-    }    
-    
-  },  
-     
-  
-  "Resources": {
-    "VPC": {
-      "Type": "AWS::EC2::VPC",
-      "Properties": {
-        "CidrBlock":  {"Ref": "VPCCIDR"},
-        "InstanceTenancy": "default",
-        "EnableDnsSupport": "true",
-        "EnableDnsHostnames": "true"
-      }
-    },
-    "userdataautomaterole" : {
-      "Type": "AWS::IAM::Role",
-      "Properties" : {
-        "AssumeRolePolicyDocument" : {
-          "Statement" : [ {
-            "Effect" : "Allow",
-            "Principal" : {
-              "Service" : ["ec2.amazonaws.com"]
+    "Mappings": {
+        "AWSNATAMI": {
+            "us-east-1": {
+                "AMI": "ami-ad227cc4"
             },
-            "Action" : ["sts:AssumeRole"]
+            "us-west-2": {
+                "AMI": "ami-f032acc0"
+            },
+            "us-west-1": {
+                "AMI": "ami-d69aad93"
+            },
+            "eu-west-1": {
+                "AMI": "ami-f3e30084"
+            },
+            "ap-southeast-1": {
+                "AMI": "ami-f22772a0"
+            },
+            "ap-southeast-2": {
+                "AMI": "ami-3bae3201"
+            },
+            "ap-northeast-1": {
+                "AMI": "ami-cd43d9cc"
+            },
+            "sa-east-1": {
+                "AMI": "ami-d78325ca"
             }
-          ]
-        }
-      }
-    }, 
-    "RolePolicies" : {
-      "Type" : "AWS::IAM::Policy",
-      "Properties" : {
-        "PolicyName" : "userdataautomate",
-        "Roles" : [ { "Ref": "userdataautomaterole" } ],
-        "PolicyDocument" : {
-          "Statement" : [ {
-            "Sid": "Stmt1393862876000",
-            "Effect" : "Allow",
-            "Resource" : [
-              "*"
-            ], 
-            "Action" : [
-              	"ec2:DescribeAccountAttributes",
-        		"ec2:DescribeAddresses",
-        		"ec2:DescribeAvailabilityZones",
-        		"ec2:DescribeImageAttribute",
-        		"ec2:DescribeInstanceAttribute",
-        		"ec2:DescribeInstanceStatus",
-        		"ec2:DescribeInstances",
-        		"ec2:DescribeNetworkInterfaceAttribute",
-        		"ec2:DescribeNetworkInterfaces",
-        		"ec2:DescribeSubnets",
-        		"ec2:DescribeVolumeAttribute",
-        		"ec2:DescribeVolumeStatus",
-              	"ec2:AssociateAddress",
-        		"ec2:ModifyInstanceAttribute",
-        		"ec2:ReplaceRoute",
-        		"ec2:AttachNetworkInterface",
-          		"ec2:CreateTags",
-            	"ec2:DeleteTags"
-            ]
+        },
+
+        "AWSPuppetAMI": {
+            "us-east-1": {
+                "AMI": "ami-bba18dd2"
+            },
+            "us-west-2": {
+                "AMI": "ami-ccf297fc"
+            },
+            "us-west-1": {
+                "AMI": "ami-a43909e1"
+            },
+            "eu-west-1": {
+                "AMI": "ami-5256b825"
+            },
+            "ap-southeast-2": {
+                "AMI": "ami-bd990e87"
+            },
+            "ap-southeast-1": {
+                "AMI": "ami-0d13700c"
+            },
+            "ap-northeast-1": {
+                "AMI": "ami-5ba83761"
+            },
+            "sa-east-1": {
+                "AMI": "ami-c99130d4"
             }
-          ]
-        }
-      }
-    },
-    "userdatainstanceprofile" : {
-      "Type": "AWS::IAM::InstanceProfile",
-      "Properties" : {
-        "Path" : "/",
-        "Roles" : [ {
-          "Ref": "userdataautomaterole"
-          }
-        ]
-      }
-    },
-    
-    "subnetPrivB": {
-      "Type": "AWS::EC2::Subnet",
-      "Properties": {
-        "CidrBlock" : {"Ref" : "Private2"},
-        "AvailabilityZone" : {"Ref" : "AZ2"},
-        "VpcId": {
-          "Ref": "VPC"
         },
-        "Tags": [
-          {
-            "Key": "private",
-            "Value": "true"
-          },
-          {
-            "Key": "Name",
-            "Value": "Private-b"
-          }
-        ]
-      }
-    },
-    "subnetPubB": {
-      "Type": "AWS::EC2::Subnet",
-      "Properties": {
-        "CidrBlock" : {"Ref" : "Public2"},
-        "AvailabilityZone" : {"Ref" : "AZ2"},
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "Public-b"
-          },
-          {
-            "Key": "public",
-            "Value": "true"
-          }
-        ]
-      }
-    },
-    "subnetPubA": {
-      "Type": "AWS::EC2::Subnet",
-      "Properties": {
-        "CidrBlock" : {"Ref" : "Public1"},
-        "AvailabilityZone" : {"Ref" : "AZ1"},
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "Public-a"
-          },
-          {
-            "Key": "public",
-            "Value": "true"
-          }
-        ]
-      }
-    },
-    "subnetPrivA": {
-      "Type": "AWS::EC2::Subnet",
-      "Properties": {
-        "CidrBlock" : {"Ref" : "Private1"},
-        "AvailabilityZone" : {"Ref" : "AZ1"},
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "Private-a"
-          },
-          {
-            "Key": "private",
-            "Value": "true"
-          }
-        ]
-      }
-    },
-    "subnetMGMT": {
-      "Type": "AWS::EC2::Subnet",
-      "Properties": {
-        "CidrBlock" : {"Ref" : "MGMT"},
-        "AvailabilityZone" : {"Ref" : "AZ3"},
-        "VpcId": {
-          "Ref": "VPC"
-        },
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "MGMT"
-          },
-          {
-            "Key": "private",
-            "Value": "true"
-          }
-        ]
-      }
-    },
-    "internetGW": {
-      "Type": "AWS::EC2::InternetGateway",
-      "Properties": {
-      }
-    },
-    "dhcpopts": {
-      "Type": "AWS::EC2::DHCPOptions",
-      "Properties": {
-        "DomainName": "lwclient.internal",
-        "DomainNameServers": [
-          "AmazonProvidedDNS"
-        ]
-      }
-    },
-    "PuppetENI" : {
-      "Type" : "AWS::EC2::NetworkInterface",
-      "Properties" : {
-        "Tags" : [{"Key" : "Name", "Value" : "Puppet static interface"
-          }
-        ],
-      "Description" : "Puppet static interface",
-      "SubnetId" : {"Ref" : "subnetMGMT"},
-      "PrivateIpAddress" : {"Ref" : "PuppetIP"}
-        }
-    }, 
-    "aclList1": {
-      "Type": "AWS::EC2::NetworkAcl",
-      "Properties": {
-        "VpcId": {
-          "Ref": "VPC"
-        }
-      }
-    },
-    "aclList2": {
-      "Type": "AWS::EC2::NetworkAcl",
-      "Properties": {
-        "VpcId": {
-          "Ref": "VPC"
-        }
-      }
-    },
-    "rtrtblInt": {
-      "Type": "AWS::EC2::RouteTable",
-      "Properties": {
-        "VpcId": {
-          "Ref": "VPC"
-        }
-      }
-    },
-    "rtrtblExt": {
-      "Type": "AWS::EC2::RouteTable",
-      "Properties": {
-        "VpcId": {
-          "Ref": "VPC"
-        }
-      }
-    },
-    "topicASNotification": {
-      "Type": "AWS::SNS::Topic",
-      "Properties": {
-        "DisplayName": "AS-Notification",
-        "Subscription": [
-          {
-            "Endpoint": "youremail@yourdomain.com",
-            "Protocol": "email"
-          },
-          {
-          	"Endpoint": { "Fn::GetAtt" : ["asgSQSQueue", "Arn"]},
-           	"Protocol": "sqs"
+
+        "AWSInstanceType2Arch": {
+            "t1.micro": {
+                "Arch": "64"
+            },
+            "m1.small": {
+                "Arch": "64"
+            },
+            "m1.medium": {
+                "Arch": "64"
+            },
+            "m1.large": {
+                "Arch": "64"
+            },
+            "m1.xlarge": {
+                "Arch": "64"
+            },
+            "m2.xlarge": {
+                "Arch": "64"
+            },
+            "m2.2xlarge": {
+                "Arch": "64"
+            },
+            "m2.4xlarge": {
+                "Arch": "64"
+            },
+            "m3.xlarge": {
+                "Arch": "64"
+            },
+            "m3.2xlarge": {
+                "Arch": "64"
+            },
+            "c1.medium": {
+                "Arch": "64"
+            },
+            "c1.xlarge": {
+                "Arch": "64"
+            },
+            "cc1.4xlarge": {
+                "Arch": "64HVM"
+            },
+            "cc2.8xlarge": {
+                "Arch": "64HVM"
+            },
+            "cg1.4xlarge": {
+                "Arch": "64HVM"
             }
-        ]
-      }
-    },
-    "asgSQSQueue": {
-      "Type": "AWS::SQS::Queue",
-      "Properties": {
-        "QueueName": "ASG_QUEUE"
-      }
-    }, 
-    "sgPuppetsecgrp": {
-      "Type": "AWS::EC2::SecurityGroup",
-      "Properties": {
-        "GroupDescription": "Puppet Security Group",
-        "VpcId": {
-          "Ref": "VPC"
         },
-        "SecurityGroupIngress": [
-          {
-            "IpProtocol": "tcp",
-            "FromPort": "22",
-            "ToPort": "22",
-            "CidrIp": {"Ref" : "VPCCIDR"}
-          },
-          {
-            "IpProtocol": "tcp",
-            "FromPort": "3000",
-            "ToPort": "3000",
-            "CidrIp": {"Ref" : "VPCCIDR"}
-          },
-          {
-            "IpProtocol": "tcp",
-            "FromPort": "8140",
-            "ToPort": "8140",
-            "CidrIp": {"Ref" : "VPCCIDR"}
-          }
-        ],
-        "SecurityGroupEgress": [
-          {
-            "IpProtocol": "-1",
-            "CidrIp": "0.0.0.0/0"
-          }
-        ]
-      }
+
+        "AWSRegionArch2AMI": {
+            "us-east-1": {
+                "32": "ami-31814f58",
+                "64": "ami-1b814f72",
+                "64HVM": "ami-0da96764"
+            },
+            "us-west-2": {
+                "32": "ami-38fe7308",
+                "64": "ami-30fe7300",
+                "64HVM": "NOT_YET_SUPPORTED"
+            },
+            "us-west-1": {
+                "32": "ami-11d68a54",
+                "64": "ami-1bd68a5e",
+                "64HVM": "NOT_YET_SUPPORTED"
+            },
+            "eu-west-1": {
+                "32": "ami-973b06e3",
+                "64": "ami-953b06e1",
+                "64HVM": "NOT_YET_SUPPORTED"
+            },
+            "ap-southeast-1": {
+                "32": "ami-b4b0cae6",
+                "64": "ami-beb0caec",
+                "64HVM": "NOT_YET_SUPPORTED"
+            },
+            "ap-southeast-2": {
+                "32": "ami-b3990e89",
+                "64": "ami-bd990e87",
+                "64HVM": "NOT_YET_SUPPORTED"
+            },
+            "ap-northeast-1": {
+                "32": "ami-0644f007",
+                "64": "ami-0a44f00b",
+                "64HVM": "NOT_YET_SUPPORTED"
+            },
+            "sa-east-1": {
+                "32": "ami-3e3be423",
+                "64": "ami-3c3be421",
+                "64HVM": "NOT_YET_SUPPORTED"
+            }
+        }
+
     },
-    
-    "GenericSecurityGroup" : {
-      "Type" : "AWS::EC2::SecurityGroup",
-      "Properties" : {
-        "GroupDescription" : "Group for clients to communicate with Puppet Master",
-        "VpcId": {
-          "Ref": "VPC"
-        }      
-      }
-    },    
-    
-    "sgNATGWsecgrp": {
-      "Type": "AWS::EC2::SecurityGroup",
-      "Properties": {
-        "GroupDescription": "Nat Gateway Security Group",
-        "VpcId": {
-          "Ref": "VPC"
+
+
+    "Resources": {
+        "VPC": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": {
+                    "Ref": "VPCCIDR"
+                },
+                "InstanceTenancy": "default",
+                "EnableDnsSupport": "true",
+                "EnableDnsHostnames": "true"
+            }
         },
-        "SecurityGroupIngress": [
-          {
-            "IpProtocol": "tcp",
-            "FromPort": "80",
-            "ToPort": "80",
-            "CidrIp": {"Ref" : "VPCCIDR"}
-          },
-          {
-            "IpProtocol": "tcp",
-            "FromPort": "443",
-            "ToPort": "443",
-            "CidrIp": {"Ref" : "VPCCIDR"}
-          },          
-          {
-            "IpProtocol": "tcp",
-            "FromPort": "22",
-            "ToPort": "22",
-            "CidrIp": "0.0.0.0/0"
-          }
-        ],
-        "SecurityGroupEgress": [
-          {
-            "IpProtocol": "-1",
-            "CidrIp": "0.0.0.0/0"
-          }
-        ]
-      }
-    },
-    
-    "acl1": {
-      "Type": "AWS::EC2::NetworkAclEntry",
-      "Properties": {
-        "CidrBlock": "0.0.0.0/0",
-        "Egress": true,
-        "Protocol": "-1",
-        "RuleAction": "allow",
-        "RuleNumber": "100",
-        "NetworkAclId": {
-          "Ref": "aclList1"
-        }
-      }
-    },
-    "acl2": {
-      "Type": "AWS::EC2::NetworkAclEntry",
-      "Properties": {
-        "CidrBlock": "0.0.0.0/0",
-        "Protocol": "6",
-        "RuleAction": "allow",
-        "RuleNumber": "101",
-        "PortRange": {
-          "From": "22",
-          "To": "22"
+        "userdataautomaterole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": ["ec2.amazonaws.com"]
+                            },
+                            "Action": ["sts:AssumeRole"]
+                        }
+                    ]
+                }
+            }
         },
-        "NetworkAclId": {
-          "Ref": "aclList1"
-        }
-      }
-    },
-    "acl3": {
-      "Type": "AWS::EC2::NetworkAclEntry",
-      "Properties": {
-        "CidrBlock": "0.0.0.0/0",
-        "Protocol": "6",
-        "RuleAction": "allow",
-        "RuleNumber": "102",
-        "PortRange": {
-          "From": "0",
-          "To": "65535"
+        "RolePolicies": {
+            "Type": "AWS::IAM::Policy",
+            "Properties": {
+                "PolicyName": "userdataautomate",
+                "Roles": [
+                    {
+                        "Ref": "userdataautomaterole"
+                    }
+                ],
+                "PolicyDocument": {
+                    "Statement": [
+                        {
+                            "Sid": "Stmt1393862876000",
+                            "Effect": "Allow",
+                            "Resource": [
+                                "*"
+                            ],
+                            "Action": [
+                                "ec2:DescribeAccountAttributes",
+                                "ec2:DescribeAddresses",
+                                "ec2:DescribeAvailabilityZones",
+                                "ec2:DescribeImageAttribute",
+                                "ec2:DescribeInstanceAttribute",
+                                "ec2:DescribeInstanceStatus",
+                                "ec2:DescribeInstances",
+                                "ec2:DescribeNetworkInterfaceAttribute",
+                                "ec2:DescribeNetworkInterfaces",
+                                "ec2:DescribeSubnets",
+                                "ec2:DescribeVolumeAttribute",
+                                "ec2:DescribeVolumeStatus",
+                                "ec2:AssociateAddress",
+                                "ec2:ModifyInstanceAttribute",
+                                "ec2:ReplaceRoute",
+                                "ec2:AttachNetworkInterface",
+                                "ec2:CreateTags",
+                                "ec2:DeleteTags"
+                            ]
+                        }
+                    ]
+                }
+            }
         },
-        "NetworkAclId": {
-          "Ref": "aclList1"
-        }
-      }
-    },
-    "acl4": {
-      "Type": "AWS::EC2::NetworkAclEntry",
-      "Properties": {
-        "CidrBlock": "0.0.0.0/0",
-        "Egress": true,
-        "Protocol": "-1",
-        "RuleAction": "allow",
-        "RuleNumber": "100",
-        "NetworkAclId": {
-          "Ref": "aclList2"
-        }
-      }
-    },
-    "acl5": {
-      "Type": "AWS::EC2::NetworkAclEntry",
-      "Properties": {
-        "CidrBlock": "0.0.0.0/0",
-        "Protocol": "6",
-        "RuleAction": "allow",
-        "RuleNumber": "101",
-        "PortRange": {
-          "From": "0",
-          "To": "65535"
+        "userdatainstanceprofile": {
+            "Type": "AWS::IAM::InstanceProfile",
+            "Properties": {
+                "Path": "/",
+                "Roles": [
+                    {
+                        "Ref": "userdataautomaterole"
+                    }
+                ]
+            }
         },
-        "NetworkAclId": {
-          "Ref": "aclList2"
-        }
-      }
-    },
-    "subnetacl1": {
-      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
-      "Properties": {
-        "NetworkAclId": {
-          "Ref": "aclList1"
+
+        "subnetPrivB": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "CidrBlock": {
+                    "Ref": "Private2"
+                },
+                "AvailabilityZone": {
+                    "Ref": "AZ2"
+                },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "private",
+                        "Value": "true"
+                    },
+                    {
+                        "Key": "Name",
+                        "Value": "Private-b"
+                    }
+                ]
+            }
         },
-        "SubnetId": {
-          "Ref": "subnetPrivA"
-        }
-      }
-    },
-    "subnetacl2": {
-      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
-      "Properties": {
-        "NetworkAclId": {
-          "Ref": "aclList1"
+        "subnetPubB": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "CidrBlock": {
+                    "Ref": "Public2"
+                },
+                "AvailabilityZone": {
+                    "Ref": "AZ2"
+                },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Public-b"
+                    },
+                    {
+                        "Key": "public",
+                        "Value": "true"
+                    }
+                ]
+            }
         },
-        "SubnetId": {
-          "Ref": "subnetPrivB"
-        }
-      }
-    },
-    "subnetacl3": {
-      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
-      "Properties": {
-        "NetworkAclId": {
-          "Ref": "aclList2"
+        "subnetPubA": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "CidrBlock": {
+                    "Ref": "Public1"
+                },
+                "AvailabilityZone": {
+                    "Ref": "AZ1"
+                },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Public-a"
+                    },
+                    {
+                        "Key": "public",
+                        "Value": "true"
+                    }
+                ]
+            }
         },
-        "SubnetId": {
-          "Ref": "subnetPubA"
-        }
-      }
-    },
-    "subnetacl4": {
-      "Type": "AWS::EC2::SubnetNetworkAclAssociation",
-      "Properties": {
-        "NetworkAclId": {
-          "Ref": "aclList2"
+        "subnetPrivA": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "CidrBlock": {
+                    "Ref": "Private1"
+                },
+                "AvailabilityZone": {
+                    "Ref": "AZ1"
+                },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Private-a"
+                    },
+                    {
+                        "Key": "private",
+                        "Value": "true"
+                    }
+                ]
+            }
         },
-        "SubnetId": {
-          "Ref": "subnetPubB"
-        }
-      }
-    },
-    "gw1": {
-      "Type": "AWS::EC2::VPCGatewayAttachment",
-      "Properties": {
-        "VpcId": {
-          "Ref": "VPC"
+        "subnetMGMT": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "CidrBlock": {
+                    "Ref": "MGMT"
+                },
+                "AvailabilityZone": {
+                    "Ref": "AZ3"
+                },
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "MGMT"
+                    },
+                    {
+                        "Key": "private",
+                        "Value": "true"
+                    }
+                ]
+            }
         },
-        "InternetGatewayId": {
-          "Ref": "internetGW"
-        }
-      }
-    },
-    "EIP" :{
-      "Type" : "AWS::EC2::EIP",
-      "DependsOn" : "gw1", 
-      "Properties" : {
-        "Domain" : "vpc"
-      }
-    },
-    "subnetroute1": {
-      "Type": "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties": {
-        "RouteTableId": {
-          "Ref": "rtrtblInt"
+        "internetGW": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+            }
         },
-        "SubnetId": {
-          "Ref": "subnetPrivA"
-        }
-      }
-    },
-    "subnetroute2": {
-      "Type": "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties": {
-        "RouteTableId": {
-          "Ref": "rtrtblInt"
+        "dhcpopts": {
+            "Type": "AWS::EC2::DHCPOptions",
+            "Properties": {
+                "DomainName": "lwclient.internal",
+                "DomainNameServers": [
+                    "AmazonProvidedDNS"
+                ]
+            }
         },
-        "SubnetId": {
-          "Ref": "subnetPrivB"
-        }
-      }
-    },
-    "subnetroute3": {
-      "Type": "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties": {
-        "RouteTableId": {
-          "Ref": "rtrtblInt"
+        "PuppetENI": {
+            "Type": "AWS::EC2::NetworkInterface",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "Puppet static interface"
+                    }
+                ],
+                "Description": "Puppet static interface",
+                "SubnetId": {
+                    "Ref": "subnetMGMT"
+                },
+                "PrivateIpAddress": {
+                    "Ref": "PuppetIP"
+                }
+            }
         },
-        "SubnetId": {
-          "Ref": "subnetMGMT"
-        }
-      }
-    },
-    "subnetroute4": {
-      "Type": "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties": {
-        "RouteTableId": {
-          "Ref": "rtrtblExt"
+        "aclList1": {
+            "Type": "AWS::EC2::NetworkAcl",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
         },
-        "SubnetId": {
-          "Ref": "subnetPubA"
-        }
-      }
-    },
-    "subnetroute5": {
-      "Type": "AWS::EC2::SubnetRouteTableAssociation",
-      "Properties": {
-        "RouteTableId": {
-          "Ref": "rtrtblExt"
+        "aclList2": {
+            "Type": "AWS::EC2::NetworkAcl",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
         },
-        "SubnetId": {
-          "Ref": "subnetPubB" 
-        }
-      }
-    },
-    "route1": {
-      "Type": "AWS::EC2::Route",
-      "Properties": {
-        "DestinationCidrBlock": "0.0.0.0/0",
-        "RouteTableId": {
-          "Ref": "rtrtblExt"
+        "rtrtblInt": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
         },
-        "GatewayId": {
-          "Ref": "internetGW"
-        }
-      },
-      "DependsOn": "gw1"
-    },
-    "route2": {
-      "Type": "AWS::EC2::Route",
-      "Properties": {
-        "DestinationCidrBlock": "0.0.0.0/0",
-        "RouteTableId": {
-          "Ref": "rtrtblInt"
+        "rtrtblExt": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
         },
-        "GatewayId": {
-          "Ref": "internetGW"
-        }
-      },
-      "DependsOn": "gw1"
-    },
-    
-    "NatGWLaunchConfig": {
-      "Type": "AWS::AutoScaling::LaunchConfiguration",
-      "Properties": {
-        "AssociatePublicIpAddress": true,
-        "IamInstanceProfile": { "Ref" : "userdatainstanceprofile" },
-        "ImageId": { "Fn::FindInMap" : [ "AWSNATAMI", { "Ref" : "AWS::Region" }, "AMI" ]},
-        "InstanceType": "m1.small",
-        "KeyName": { "Ref" : "KeyName" },
-        "InstanceMonitoring": true,
-        "SecurityGroups": [ { "Ref" : "sgNATGWsecgrp" } ],
-        "UserData": { "Fn::Base64" : { "Fn::Join" : ["",[
-          "#!/bin/bash\n",
-          "route_table=",{"Ref" : "rtrtblInt"}, "\n",
-          "elastic_IP=",{ "Fn::GetAtt" : [ "EIP", "AllocationId" ] }, "\n",
-          "puppet_hostname=",{"Ref" : "PuppetHostName"}, "\n",
-          "puppet_ip=",{"Ref" : "PuppetIP"}, "\n",
-          "IAMRole=",{"Fn::GetAtt" : ["userdataautomaterole", "Arn"] },"\n",
-          "IAMRole_Parsed=$(echo $IAMRole | sed -r 's/^.{31}//')\n",
-          "bucket_name=",{"Ref" : "BucketName"}, "\n",
-          "region=",{"Ref" : "RegionName"}, "\n",
-          "yum update -y\n",
-          "echo",{"Ref" : "PublicKey"}, ">> /home/ec2-user/.ssh/authorized_keys\n",
-          "echo ",{"Ref" : "SSHPrivateKey"}, " >> /home/ec2-user/.ssh/id_rsa", "\n",
-          "chmod 600 /home/ec2-user/.ssh/id_rsa\n",
-          "chown ec2-user:ec2-user /home/ec2-user/.ssh/id_rsa\n",
-          "instance_id=`wget -q -O - http://169.254.169.254/latest/meta-data/instance-id`\n",
-          "wget -q -O /tmp/role http://169.254.169.254/latest/meta-data/iam/security-credentials/$IAMRole_Parsed\n",
-          "accessKey=`awk -F\"[,:]\" '{for(i=1;i<=NF;i++){if($i~/AccessKeyId\\042/){print $(i+1)} } }' /tmp/role | sed -e 's/^\\s\"//' -e 's/\"$//'`\n",
-          "secretKey=`awk -F\"[,:]\" '{for(i=1;i<=NF;i++){if($i~/SecretAccessKey\\042/){print $(i+1)} } }' /tmp/role | sed -e 's/^\\s\"//' -e 's/\"$//'`\n",
-          "token=`awk -F\"[,:]\" '{for(i=1;i<=NF;i++){if($i~/Token\\042/){print $(i+1)} } }' /tmp/role | sed -e 's/^\\s\"//' -e 's/\"$//'`\n",
-          "export EC2_HOME=/opt/aws/apitools/ec2\n",
-          "export JAVA_HOME=/usr/lib/jvm/jre\n",
-          "/opt/aws/bin/ec2-replace-route --aws-access-key $accessKey --aws-secret-key $secretKey --security-token $token --region $region $route_table -r 0.0.0.0/0 -i $instance_id\n",
-          "/opt/aws/bin/ec2-modify-instance-attribute --aws-access-key $accessKey --aws-secret-key $secretKey --security-token $token --region $region $instance_id --source-dest-check false\n",
-          "/opt/aws/bin/ec2-associate-address --aws-access-key $accessKey --aws-secret-key $secretKey --security-token $token --region $region -i $instance_id -a $elastic_IP\n",
-          "/opt/aws/bin/ec2-create-tags --aws-access-key $accessKey --aws-secret-key $secretKey --region $region --security-token $token $instance_id --tag \"frequency=daily\"\n",
-          "/opt/aws/bin/ec2-create-tags --aws-access-key $accessKey --aws-secret-key $secretKey --region $region --security-token $token $instance_id --tag \"retention=7d\"\n",
-          "yum install puppet -y\n",
-          "echo \"[main]\" > /etc/puppet/puppet.conf\n",
-          "echo \"    logdir = /var/log/puppet\" >> /etc/puppet/puppet.conf\n",
-          "echo \"    rundir = /var/run/puppet\" >> /etc/puppet/puppet.conf\n",
-          "echo '    ssldir = $vardir/ssl' >> /etc/puppet/puppet.conf\n",
-          "echo '    privatekeydir = $ssldir/private_keys { group = service }' >> /etc/puppet/puppet.conf\n",
-          "echo '    hostprivkey = $privatekeydir/$certname.pem { mode = 640 }' >> /etc/puppet/puppet.conf\n",
-          "echo '    autosign       = $confdir/autosign.conf { mode = 664 }' >> /etc/puppet/puppet.conf\n",
-          "echo \" \" >> /etc/puppet/puppet.conf\n",
-          "echo \"[agent]\" >> /etc/puppet/puppet.conf\n",
-          "echo '    classfile = $vardir/classes.txt' >> /etc/puppet/puppet.conf\n",
-          "echo '    localconfig = $vardir/localconfig' >> /etc/puppet/puppet.conf\n",
-          "echo \"    report      = true\" >> /etc/puppet/puppet.conf\n",
-          "echo \"    pluginsync  = true\" >> /etc/puppet/puppet.conf\n",
-          "echo \"    masterport  = 8140\" >> /etc/puppet/puppet.conf\n",
-          "echo \"    environment = production\" >> /etc/puppet/puppet.conf\n",
-          "echo \"    server      = $puppet_hostname\" >> /etc/puppet/puppet.conf\n",
-          "echo \"    listen      = false\" >> /etc/puppet/puppet.conf\n",
-          "echo \"$puppet_ip $puppet_hostname\" >> /etc/hosts\n",
-          "chkconfig puppet on\n",
-          "service puppet start\n",
-          "echo 'require \"facter\"' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
-          "echo '' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
-          "echo 'def add_new_fact (name,value)' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
-          "echo '  Facter.add(name) do' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
-          "echo '    setcode do' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
-          "echo '      value' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
-          "echo '    end' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
-          "echo '  end' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
-          "echo '  Facter.flush() ' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
-          "echo 'end' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
-          "echo '' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
-          "echo 'add_new_fact(\"role\", \"natgw\")' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n"
-          ]
-          ]
-          }
-        }
-      }
-    },
-    
-    "NatGWAutoScalingGroup": {
-      "Type" : "AWS::AutoScaling::AutoScalingGroup",
-      "Properties" : {
-        "AvailabilityZones" : [{"Ref" : "AZ1"}, {"Ref" : "AZ2"}],
-        "DesiredCapacity" : "1",
-        "HealthCheckType" : "EC2",
-        "LaunchConfigurationName" : { "Ref" : "NatGWLaunchConfig" },
-        "MaxSize" : "1",
-        "MinSize" : "1",
-        "Tags" : [ {
-          "Key" : "Name",
-          "Value" : {"Ref" : "NatGWHostName"},
-          "PropagateAtLaunch" : "true"
-          }
-          ],
-        "VPCZoneIdentifier" : [{"Ref" : "subnetPubA"}, {"Ref" : "subnetPubB"}]
-      }
-    }, 
-    
-    "dchpassoc1": {
-      "Type": "AWS::EC2::VPCDHCPOptionsAssociation",
-      "Properties": {
-        "VpcId": {
-          "Ref": "VPC"
+        "topicASNotification": {
+            "Type": "AWS::SNS::Topic",
+            "Properties": {
+                "DisplayName": "AS-Notification",
+                "Subscription": [
+                    {
+                        "Endpoint": "youremail@yourdomain.com",
+                        "Protocol": "email"
+                    },
+                    {
+                        "Endpoint": {
+                            "Fn::GetAtt": ["asgSQSQueue", "Arn"]
+                        },
+                        "Protocol": "sqs"
+                    }
+                ]
+            }
         },
-        "DhcpOptionsId": {
-          "Ref": "dhcpopts"
+        "asgSQSQueue": {
+            "Type": "AWS::SQS::Queue",
+            "Properties": {
+                "QueueName": "ASG_QUEUE"
+            }
+        },
+        "sgPuppetsecgrp": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Puppet Security Group",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": {
+                            "Ref": "VPCCIDR"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "3000",
+                        "ToPort": "3000",
+                        "CidrIp": {
+                            "Ref": "VPCCIDR"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "8140",
+                        "ToPort": "8140",
+                        "CidrIp": {
+                            "Ref": "VPCCIDR"
+                        }
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "-1",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+
+        "GenericSecurityGroup": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Group for clients to communicate with Puppet Master",
+                "VpcId": {
+                    "Ref": "VPC"
+                }
+            }
+        },
+
+        "sgNATGWsecgrp": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Nat Gateway Security Group",
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "80",
+                        "ToPort": "80",
+                        "CidrIp": {
+                            "Ref": "VPCCIDR"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "443",
+                        "ToPort": "443",
+                        "CidrIp": {
+                            "Ref": "VPCCIDR"
+                        }
+                    },
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": "22",
+                        "ToPort": "22",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": "-1",
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+
+        "acl1": {
+            "Type": "AWS::EC2::NetworkAclEntry",
+            "Properties": {
+                "CidrBlock": "0.0.0.0/0",
+                "Egress": true,
+                "Protocol": "-1",
+                "RuleAction": "allow",
+                "RuleNumber": "100",
+                "NetworkAclId": {
+                    "Ref": "aclList1"
+                }
+            }
+        },
+        "acl2": {
+            "Type": "AWS::EC2::NetworkAclEntry",
+            "Properties": {
+                "CidrBlock": "0.0.0.0/0",
+                "Protocol": "6",
+                "RuleAction": "allow",
+                "RuleNumber": "101",
+                "PortRange": {
+                    "From": "22",
+                    "To": "22"
+                },
+                "NetworkAclId": {
+                    "Ref": "aclList1"
+                }
+            }
+        },
+        "acl3": {
+            "Type": "AWS::EC2::NetworkAclEntry",
+            "Properties": {
+                "CidrBlock": "0.0.0.0/0",
+                "Protocol": "6",
+                "RuleAction": "allow",
+                "RuleNumber": "102",
+                "PortRange": {
+                    "From": "0",
+                    "To": "65535"
+                },
+                "NetworkAclId": {
+                    "Ref": "aclList1"
+                }
+            }
+        },
+        "acl4": {
+            "Type": "AWS::EC2::NetworkAclEntry",
+            "Properties": {
+                "CidrBlock": "0.0.0.0/0",
+                "Egress": true,
+                "Protocol": "-1",
+                "RuleAction": "allow",
+                "RuleNumber": "100",
+                "NetworkAclId": {
+                    "Ref": "aclList2"
+                }
+            }
+        },
+        "acl5": {
+            "Type": "AWS::EC2::NetworkAclEntry",
+            "Properties": {
+                "CidrBlock": "0.0.0.0/0",
+                "Protocol": "6",
+                "RuleAction": "allow",
+                "RuleNumber": "101",
+                "PortRange": {
+                    "From": "0",
+                    "To": "65535"
+                },
+                "NetworkAclId": {
+                    "Ref": "aclList2"
+                }
+            }
+        },
+        "subnetacl1": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "NetworkAclId": {
+                    "Ref": "aclList1"
+                },
+                "SubnetId": {
+                    "Ref": "subnetPrivA"
+                }
+            }
+        },
+        "subnetacl2": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "NetworkAclId": {
+                    "Ref": "aclList1"
+                },
+                "SubnetId": {
+                    "Ref": "subnetPrivB"
+                }
+            }
+        },
+        "subnetacl3": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "NetworkAclId": {
+                    "Ref": "aclList2"
+                },
+                "SubnetId": {
+                    "Ref": "subnetPubA"
+                }
+            }
+        },
+        "subnetacl4": {
+            "Type": "AWS::EC2::SubnetNetworkAclAssociation",
+            "Properties": {
+                "NetworkAclId": {
+                    "Ref": "aclList2"
+                },
+                "SubnetId": {
+                    "Ref": "subnetPubB"
+                }
+            }
+        },
+        "gw1": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "InternetGatewayId": {
+                    "Ref": "internetGW"
+                }
+            }
+        },
+        "EIP": {
+            "Type": "AWS::EC2::EIP",
+            "DependsOn": "gw1",
+            "Properties": {
+                "Domain": "vpc"
+            }
+        },
+        "subnetroute1": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "rtrtblInt"
+                },
+                "SubnetId": {
+                    "Ref": "subnetPrivA"
+                }
+            }
+        },
+        "subnetroute2": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "rtrtblInt"
+                },
+                "SubnetId": {
+                    "Ref": "subnetPrivB"
+                }
+            }
+        },
+        "subnetroute3": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "rtrtblInt"
+                },
+                "SubnetId": {
+                    "Ref": "subnetMGMT"
+                }
+            }
+        },
+        "subnetroute4": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "rtrtblExt"
+                },
+                "SubnetId": {
+                    "Ref": "subnetPubA"
+                }
+            }
+        },
+        "subnetroute5": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "rtrtblExt"
+                },
+                "SubnetId": {
+                    "Ref": "subnetPubB"
+                }
+            }
+        },
+        "route1": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "RouteTableId": {
+                    "Ref": "rtrtblExt"
+                },
+                "GatewayId": {
+                    "Ref": "internetGW"
+                }
+            },
+            "DependsOn": "gw1"
+        },
+        "route2": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "RouteTableId": {
+                    "Ref": "rtrtblInt"
+                },
+                "GatewayId": {
+                    "Ref": "internetGW"
+                }
+            },
+            "DependsOn": "gw1"
+        },
+
+        "NatGWLaunchConfig": {
+            "Type": "AWS::AutoScaling::LaunchConfiguration",
+            "Properties": {
+                "AssociatePublicIpAddress": true,
+                "IamInstanceProfile": {
+                    "Ref": "userdatainstanceprofile"
+                },
+                "ImageId": {
+                    "Fn::FindInMap": [ "AWSNATAMI", {
+                        "Ref": "AWS::Region"
+                    }, "AMI" ]
+                },
+                "InstanceType": "m1.small",
+                "KeyName": {
+                    "Ref": "KeyName"
+                },
+                "InstanceMonitoring": true,
+                "SecurityGroups": [
+                    {
+                        "Ref": "sgNATGWsecgrp"
+                    }
+                ],
+                "UserData": {
+                    "Fn::Base64": {
+                        "Fn::Join": ["", [
+                            "#!/bin/bash\n",
+                            "route_table=", {
+                                "Ref": "rtrtblInt"
+                            }, "\n",
+                            "elastic_IP=", {
+                                "Fn::GetAtt": [ "EIP", "AllocationId" ]
+                            }, "\n",
+                            "puppet_hostname=", {
+                                "Ref": "PuppetHostName"
+                            }, "\n",
+                            "puppet_ip=", {
+                                "Ref": "PuppetIP"
+                            }, "\n",
+                            "IAMRole=", {
+                                "Fn::GetAtt": ["userdataautomaterole", "Arn"]
+                            }, "\n",
+                            "IAMRole_Parsed=$(echo $IAMRole | sed -r 's/^.{31}//')\n",
+                            "bucket_name=", {
+                                "Ref": "BucketName"
+                            }, "\n",
+                            "region=", {
+                                "Ref": "RegionName"
+                            }, "\n",
+                            "yum update -y\n",
+                            "echo", {
+                                "Ref": "PublicKey"
+                            }, ">> /home/ec2-user/.ssh/authorized_keys\n",
+                            "echo ", {
+                                "Ref": "SSHPrivateKey"
+                            }, " >> /home/ec2-user/.ssh/id_rsa", "\n",
+                            "chmod 600 /home/ec2-user/.ssh/id_rsa\n",
+                            "chown ec2-user:ec2-user /home/ec2-user/.ssh/id_rsa\n",
+                            "instance_id=`wget -q -O - http://169.254.169.254/latest/meta-data/instance-id`\n",
+                            "wget -q -O /tmp/role http://169.254.169.254/latest/meta-data/iam/security-credentials/$IAMRole_Parsed\n",
+                            "accessKey=`awk -F\"[,:]\" '{for(i=1;i<=NF;i++){if($i~/AccessKeyId\\042/){print $(i+1)} } }' /tmp/role | sed -e 's/^\\s\"//' -e 's/\"$//'`\n",
+                            "secretKey=`awk -F\"[,:]\" '{for(i=1;i<=NF;i++){if($i~/SecretAccessKey\\042/){print $(i+1)} } }' /tmp/role | sed -e 's/^\\s\"//' -e 's/\"$//'`\n",
+                            "token=`awk -F\"[,:]\" '{for(i=1;i<=NF;i++){if($i~/Token\\042/){print $(i+1)} } }' /tmp/role | sed -e 's/^\\s\"//' -e 's/\"$//'`\n",
+                            "export EC2_HOME=/opt/aws/apitools/ec2\n",
+                            "export JAVA_HOME=/usr/lib/jvm/jre\n",
+                            "/opt/aws/bin/ec2-replace-route --aws-access-key $accessKey --aws-secret-key $secretKey --security-token $token --region $region $route_table -r 0.0.0.0/0 -i $instance_id\n",
+                            "/opt/aws/bin/ec2-modify-instance-attribute --aws-access-key $accessKey --aws-secret-key $secretKey --security-token $token --region $region $instance_id --source-dest-check false\n",
+                            "/opt/aws/bin/ec2-associate-address --aws-access-key $accessKey --aws-secret-key $secretKey --security-token $token --region $region -i $instance_id -a $elastic_IP\n",
+                            "/opt/aws/bin/ec2-create-tags --aws-access-key $accessKey --aws-secret-key $secretKey --region $region --security-token $token $instance_id --tag \"frequency=daily\"\n",
+                            "/opt/aws/bin/ec2-create-tags --aws-access-key $accessKey --aws-secret-key $secretKey --region $region --security-token $token $instance_id --tag \"retention=7d\"\n",
+                            "yum install puppet -y\n",
+                            "echo \"[main]\" > /etc/puppet/puppet.conf\n",
+                            "echo \"    logdir = /var/log/puppet\" >> /etc/puppet/puppet.conf\n",
+                            "echo \"    rundir = /var/run/puppet\" >> /etc/puppet/puppet.conf\n",
+                            "echo '    ssldir = $vardir/ssl' >> /etc/puppet/puppet.conf\n",
+                            "echo '    privatekeydir = $ssldir/private_keys { group = service }' >> /etc/puppet/puppet.conf\n",
+                            "echo '    hostprivkey = $privatekeydir/$certname.pem { mode = 640 }' >> /etc/puppet/puppet.conf\n",
+                            "echo '    autosign       = $confdir/autosign.conf { mode = 664 }' >> /etc/puppet/puppet.conf\n",
+                            "echo \" \" >> /etc/puppet/puppet.conf\n",
+                            "echo \"[agent]\" >> /etc/puppet/puppet.conf\n",
+                            "echo '    classfile = $vardir/classes.txt' >> /etc/puppet/puppet.conf\n",
+                            "echo '    localconfig = $vardir/localconfig' >> /etc/puppet/puppet.conf\n",
+                            "echo \"    report      = true\" >> /etc/puppet/puppet.conf\n",
+                            "echo \"    pluginsync  = true\" >> /etc/puppet/puppet.conf\n",
+                            "echo \"    masterport  = 8140\" >> /etc/puppet/puppet.conf\n",
+                            "echo \"    environment = production\" >> /etc/puppet/puppet.conf\n",
+                            "echo \"    server      = $puppet_hostname\" >> /etc/puppet/puppet.conf\n",
+                            "echo \"    listen      = false\" >> /etc/puppet/puppet.conf\n",
+                            "echo \"$puppet_ip $puppet_hostname\" >> /etc/hosts\n",
+                            "chkconfig puppet on\n",
+                            "service puppet start\n",
+                            "echo 'require \"facter\"' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
+                            "echo '' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
+                            "echo 'def add_new_fact (name,value)' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
+                            "echo '  Facter.add(name) do' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
+                            "echo '    setcode do' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
+                            "echo '      value' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
+                            "echo '    end' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
+                            "echo '  end' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
+                            "echo '  Facter.flush() ' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
+                            "echo 'end' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
+                            "echo '' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n",
+                            "echo 'add_new_fact(\"role\", \"natgw\")' >> /usr/lib/ruby/site_ruby/1.8/facter/role_natgw.rb\n"
+                        ]
+                        ]
+                    }
+                }
+            }
+        },
+
+        "NatGWAutoScalingGroup": {
+            "Type": "AWS::AutoScaling::AutoScalingGroup",
+            "Properties": {
+                "AvailabilityZones": [
+                    {
+                        "Ref": "AZ1"
+                    },
+                    {
+                        "Ref": "AZ2"
+                    }
+                ],
+                "DesiredCapacity": "1",
+                "HealthCheckType": "EC2",
+                "LaunchConfigurationName": {
+                    "Ref": "NatGWLaunchConfig"
+                },
+                "MaxSize": "1",
+                "MinSize": "1",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": {
+                            "Ref": "NatGWHostName"
+                        },
+                        "PropagateAtLaunch": "true"
+                    }
+                ],
+                "VPCZoneIdentifier": [
+                    {
+                        "Ref": "subnetPubA"
+                    },
+                    {
+                        "Ref": "subnetPubB"
+                    }
+                ]
+            }
+        },
+
+        "dchpassoc1": {
+            "Type": "AWS::EC2::VPCDHCPOptionsAssociation",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "VPC"
+                },
+                "DhcpOptionsId": {
+                    "Ref": "dhcpopts"
+                }
+            }
         }
-      }
-    }
-  },
-  
-  "Outputs" : {
-    "ElasticIP" : {
-      "Value" : { "Fn::GetAtt" : [ "EIP", "AllocationId" ] },
-      "Description" : "Allocation ID of Elastic IP"
     },
-    "IAMRole" : {
-      "Value" : {"Fn::GetAtt" : ["userdataautomaterole", "Arn"] },
-      "Description" : "Resource name for the userdata automation IAM role"
+
+    "Outputs": {
+        "ElasticIP": {
+            "Value": {
+                "Fn::GetAtt": [ "EIP", "AllocationId" ]
+            },
+            "Description": "Allocation ID of Elastic IP"
+        },
+        "IAMRole": {
+            "Value": {
+                "Fn::GetAtt": ["userdataautomaterole", "Arn"]
+            },
+            "Description": "Resource name for the userdata automation IAM role"
+        },
+        "subnetPrivB": {
+            "Value": {
+                "Ref": "Private2"
+            },
+            "Description": "Network block for private subnet B"
+        },
+        "subnetPubB": {
+            "Value": {
+                "Ref": "Public2"
+            },
+            "Description": "Network block for public subnet B"
+        },
+        "subnetPrivA": {
+            "Value": {
+                "Ref": "Private1"
+            },
+            "Description": "Network block for private subnet A"
+        },
+        "subnetPubA": {
+            "Value": {
+                "Ref": "Public1"
+            },
+            "Description": "Network block for public subnet A"
+        },
+        "subnetMGMT": {
+            "Value": {
+                "Ref": "Public1"
+            },
+            "Description": "Network block for management subnet"
+        },
+        "PuppetIP": {
+            "Value": {
+                "Ref": "PuppetIP"
+            },
+            "Description": "IP address of Puppet"
+        }
     },
-    "subnetPrivB" : {
-      "Value" : {"Ref" : "Private2"},
-      "Description" : "Network block for private subnet B"
-    },
-    "subnetPubB" : {
-      "Value" : {"Ref" : "Public2"},
-      "Description" : "Network block for public subnet B"
-    },
-    "subnetPrivA" : {
-      "Value" : {"Ref" : "Private1"},
-      "Description" : "Network block for private subnet A"
-    },
-    "subnetPubA" : {
-      "Value" : {"Ref" : "Public1"},
-      "Description" : "Network block for public subnet A"
-    },
-    "subnetMGMT" : {
-      "Value" : {"Ref" : "Public1"},
-      "Description" : "Network block for management subnet"
-    },
-    "PuppetIP" : {
-      "Value" : {"Ref" : "PuppetIP"},
-      "Description" : "IP address of Puppet"
-    }
-    },
-  "Description": "Sample AWS Cloudformation Template"
+    "Description": "Sample AWS Cloudformation Template"
 }
