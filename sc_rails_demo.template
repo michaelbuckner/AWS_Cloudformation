@@ -187,7 +187,7 @@
             "Fn::Join": [
               "",
               [
-                "#!/bin/bash\n",
+                "#!/bin/bash\n"
               ]
             ]
           }
