@@ -13,7 +13,377 @@
       ]
     },
     "ServiceNowUsername": {
+      "Description": "Enter your ServiceNow username to be{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Parameters": {
+    "KeyPair": {
+      "Description": "Choose an existing key pair for access",
+      "Type": "String",
+      "Default": "SC Lab",
+      "AllowedValues": [
+        "SC Lab",
+        "SPLI_Integration",
+        "MoodleKey",
+        "chefkey",
+        "sm_bootcamp_geneva_nir"
+      ]
+    },
+    "ServiceNowUsername": {
       "Description": "Enter your ServiceNow username to be prepended onto instance name tags",
+      "Type": "String",
+      "MinLength": "1",
+      "MaxLength": "64",
+      "AllowedPattern": "^(?=.{8,20}$)(?![_.])(?!.*[_.]{2})[a-zA-Z0-9._]+(?<![_.])$"
+    }
+  },
+  "Mappings": {
+    "HAProxyAMI": {
+      "us-east-1": {
+        "AMI": "ami-ad227cc4"
+      }
+    },
+    "RailsAMI": {
+      "us-east-1": {
+        "AMI": "ami-07b8936d"
+      }
+    },
+    "PostgresAMI": {
+      "us-east-01": {
+        "AMI": ""
+      }
+    },
+    "SCLabPublicKey": {
+      "key": {
+        "string": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDEHlu3oYtSuYr+OyS9ni7+x5+Bd+422HXRv2kQYavEBzGyEtPEEGaFGBD0o3hDD8+9xJDR6U1Qco9l/2MKJwVuaXrSVF9k3XAwuMEDB/95f5kq7OQrSJK5A24/mlkDgskqGAVcwm4/hAl0kjZ1Qu8hD9D4I8IsHrRHoKqM0tcWgajJv/0Su1yj4PQlzfeKwkV4YlhgDlwDh1fZQ+/rOXcvpp+d+EH69hoHJs8zfnC7xq5qPZDcH+6YlyzxOABp0aH6Xm+7pg0aS2nKHTu7jpXCxTdDd1oj1Ug5srPz0DW9aLUzKQwonjGGB6/sBCvFHeY86/QcQ7htHD4BQAdLFUYv SC Lab"
+      }
+    }
+  },
+  "Resources": {
+    "HAProxy": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": "ami-cdb49fa7",
+        "InstanceType": "t2.micro",
+        "KeyName": {
+          "Ref": "KeyPair"
+        },
+        "SecurityGroupIds": [
+          "sg-205c3b44"
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "ServiceNowUsername"
+                  },
+                  "haproxy"
+                ]
+              ]
+            }
+          }
+        ],
+        "SubnetId": "subnet-1759d94e",
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash\n",
+                "yum update -y",
+                "echo",
+                {
+                  "Fn::FindInMap": [
+                    "SCLabPublicKey",
+                    "key",
+                    "string"
+                  ]
+                },
+                "> /root/.ssh/authorized_keys\n",
+                "sed -i 's/CHANGE_ME_APP01/",
+                {
+                  "Fn::GetAtt": [
+                    "Rails01",
+                    "PrivateIp"
+                  ]
+                },
+                "/g' /etc/haproxy/haproxy.cfg",
+                "\n",
+                "sed -i 's/CHANGE_ME_APP02/",
+                {
+                  "Fn::GetAtt": [
+                    "Rails02",
+                    "PrivateIp"
+                  ]
+                },
+                "/g' /etc/haproxy/haproxy.cfg",
+                "\n",
+                "/etc/init.d/haproxy restart\n",
+                "sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config\n",
+                "service sshd restart\n",
+                "yum install net-snmp-utils net-snmp -y\n",
+                "cat /dev/null > /etc/snmp/snmpd.conf\n",
+                "echo 'syscontact  ",{"Ref": "ServiceNowUsername"},"' > /etc/snmp/snmpd.conf\n",
+                "echo 'rocommunity  public' > /etc/snmp/snmpd.conf\n",
+                "echo 'syslocation  \"AWS\"' > /etc/snmp/snmpd.conf\n",
+                "chkconfig snmpd on\n",
+                "service snmpd start"
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "Rails01": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": "ami-3786ad5d",
+        "InstanceType": "t2.micro",
+        "KeyName": {
+          "Ref": "KeyPair"
+        },
+        "SecurityGroupIds": [
+          "sg-205c3b44"
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "ServiceNowUsername"
+                  },
+                  "rails01"
+                ]
+              ]
+            }
+          }
+        ],
+        "SubnetId": "subnet-1759d94e",
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash\n",
+                "yum update -y",
+                "echo",
+                {
+                  "Fn::FindInMap": [
+                    "SCLabPublicKey",
+                    "key",
+                    "string"
+                  ]
+                },
+                "> /root/.ssh/authorized_keys\n",
+                "sed -i 's/CHANGEME_DB/",
+                {
+                  "Fn::GetAtt": [
+                    "Postgres",
+                    "PrivateIp"
+                  ]
+                },
+                "/g' /var/www/sc_demo_rails/config/database.yml",
+                "\n",
+                "cd /var/www/sc_demo_rails\n",
+                "unicorn_rails &\n",
+                "sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config\n",
+                "service sshd restart\n",
+                "yum install net-snmp-utils net-snmp -y\n",
+                "cat /dev/null > /etc/snmp/snmpd.conf\n",
+                "echo 'syscontact  ",{"Ref": "ServiceNowUsername"},"' > /etc/snmp/snmpd.conf\n",
+                "echo 'rocommunity  public' > /etc/snmp/snmpd.conf\n",
+                "echo 'syslocation  \"AWS\"' > /etc/snmp/snmpd.conf\n",
+                "chkconfig snmpd on\n",
+                "service snmpd start"
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "Rails02": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": "ami-3786ad5d",
+        "InstanceType": "t2.micro",
+        "KeyName": {
+          "Ref": "KeyPair"
+        },
+        "SecurityGroupIds": [
+          "sg-205c3b44"
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "ServiceNowUsername"
+                  },
+                  "rails02"
+                ]
+              ]
+            }
+          }
+        ],
+        "SubnetId": "subnet-1759d94e",
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash\n",
+                "yum update -y",
+                "echo",
+                {
+                  "Fn::FindInMap": [
+                    "SCLabPublicKey",
+                    "key",
+                    "string"
+                  ]
+                },
+                "> /root/.ssh/authorized_keys\n",
+                "sed -i 's/CHANGEME_DB/",
+                {
+                  "Fn::GetAtt": [
+                    "Postgres",
+                    "PrivateIp"
+                  ]
+                },
+                "/g' /var/www/sc_demo_rails/config/database.yml",
+                "\n",
+                "cd /var/www/sc_demo_rails\n",
+                "unicorn_rails &\n",
+                "sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config\n",
+                "service sshd restart\n",
+                "yum install net-snmp-utils net-snmp -y\n",
+                "cat /dev/null > /etc/snmp/snmpd.conf\n",
+                "echo 'syscontact  ",{"Ref": "ServiceNowUsername"},"' > /etc/snmp/snmpd.conf\n",
+                "echo 'rocommunity  public' > /etc/snmp/snmpd.conf\n",
+                "echo 'syslocation  \"AWS\"' > /etc/snmp/snmpd.conf\n",
+                "chkconfig snmpd on\n",
+                "service snmpd start"
+              ]
+            ]
+          }
+        }
+      }
+    },
+    "Postgres": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": "ami-4d8da627",
+        "InstanceType": "t2.micro",
+        "KeyName": {
+          "Ref": "KeyPair"
+        },
+        "SecurityGroupIds": [
+          "sg-205c3b44"
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Ref": "ServiceNowUsername"
+                  },
+                  "postgres"
+                ]
+              ]
+            }
+          }
+        ],
+        "SubnetId": "subnet-1759d94e",
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "",
+              [
+                "#!/bin/bash\n",
+                "yum update -y",
+                "sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/' /etc/ssh/sshd_config\n",
+                "service sshd restart\n",
+                "yum install net-snmp-utils net-snmp -y\n",
+                "cat /dev/null > /etc/snmp/snmpd.conf\n",
+                "echo 'syscontact  ",{"Ref": "ServiceNowUsername"},"' > /etc/snmp/snmpd.conf\n",
+                "echo 'rocommunity  public' > /etc/snmp/snmpd.conf\n",
+                "echo 'syslocation  \"AWS\"' > /etc/snmp/snmpd.conf\n",
+                "chkconfig snmpd on\n",
+                "service snmpd start"
+              ]
+            ]
+          }
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "Entrypoint": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "http://",
+            {
+              "Fn::GetAtt": [
+                "HAProxy",
+                "PrivateIp"
+              ]
+            }
+          ]
+        ]
+      },
+      "Description": "Public IP of HAProxy server"
+    },
+    "HAProxyPublicIP": {
+      "Value": {
+        "Fn::GetAtt": [
+          "HAProxy",
+          "PublicIp"
+        ]
+      },
+      "Description": "Public IP of HAProxy server"
+    },
+    "Rails01PublicIP": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Rails01",
+          "PublicIp"
+        ]
+      },
+      "Description": "Private IP of Rails01 server"
+    },
+    "Rails02PublicIP": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Rails02",
+          "PublicIp"
+        ]
+      },
+      "Description": "Public IP of Rails02 server"
+    },
+    "PostgresPublicIP": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Postgres",
+          "PublicIp"
+        ]
+      },
+      "Description": "Public IP of Postgres server"
+    }
+  }
+} prepended onto instance name tags",
       "Type": "String",
       "MinLength": "1",
       "MaxLength": "64",
